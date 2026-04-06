@@ -4,15 +4,12 @@ import { useNavigate } from "react-router";
 import { createPublicTicket } from "../../api/ticket.api";
 import {
   ButtonLink,
-  FeatureCard,
   FieldInput,
   FieldSelect,
   FieldTextArea,
   InlineNotice,
   PublicShell,
   PublicTopBar,
-  SectionHeader,
-  StatCard,
   SubmitButton,
   SurfaceCard,
 } from "../../components/public/PublicUi";
@@ -38,47 +35,6 @@ const initialValues: FormValues = {
 };
 
 const categories = ["Critical", "High", "Medium", "Low"];
-
-const quickStats = [
-  {
-    label: "Respon Awal",
-    value: "< 15 Menit",
-    helper: "untuk kategori kritikal dan high priority",
-  },
-  {
-    label: "Monitoring",
-    value: "24/7",
-    helper: "tim support siap menerima laporan operasional",
-  },
-  {
-    label: "Status Update",
-    value: "Realtime",
-    helper: "pelapor dapat mengecek progres kapan saja",
-  },
-];
-
-const servicePoints = [
-  {
-    title: "Input lebih terstruktur",
-    description:
-      "Form dirancang agar data inti terkumpul sejak awal, sehingga tim teknis dapat melakukan triase dengan lebih cepat.",
-  },
-  {
-    title: "Prioritas berdasarkan dampak",
-    description:
-      "Setiap tiket diproses sesuai kategori urgensi untuk membantu menjaga stabilitas layanan dan operasional.",
-  },
-  {
-    title: "Transparan untuk pelapor",
-    description:
-      "Setelah submit, sistem menyiapkan kode tiket yang bisa digunakan untuk memantau progres penanganan.",
-  },
-  {
-    title: "Siap dipakai di semua device",
-    description:
-      "Tata letak responsif memastikan pengalaman tetap nyaman di desktop, tablet, maupun layar ponsel.",
-  },
-];
 
 function validateForm(values: FormValues): FormErrors {
   const errors: FormErrors = {};
@@ -156,42 +112,18 @@ export default function PublicFormPage() {
     <PublicShell>
       <PublicTopBar />
 
-      <main className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr] lg:items-start">
-        <section className="order-2 space-y-6 lg:order-1 lg:pr-4">
-          <SectionHeader
-            badge="Portal Aduan Publik"
-            title="Laporkan kendala dengan tampilan yang modern, proses yang profesional, dan alur yang mudah dipahami."
-            description="Halaman ini dirancang untuk mempercepat pelaporan insiden atau kendala layanan. Semua informasi penting dikumpulkan sejak awal agar tim support bisa memproses tiket secara lebih akurat dan konsisten."
-          />
-
-          <div className="grid gap-4 sm:grid-cols-3">
-            {quickStats.map((item) => (
-              <StatCard
-                key={item.label}
-                label={item.label}
-                value={item.value}
-                helper={item.helper}
-              />
-            ))}
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            {servicePoints.map((point) => (
-              <FeatureCard
-                key={point.title}
-                title={point.title}
-                description={point.description}
-              />
-            ))}
-          </div>
-        </section>
-
-        <SurfaceCard className="order-1 h-fit p-5 sm:p-6 lg:order-2 lg:sticky lg:top-6">
-          <div className="space-y-2">
-            <h2 className="text-2xl font-semibold text-slate-950">Form Aduan Publik</h2>
+      <main className="mx-auto w-full max-w-3xl">
+        <SurfaceCard className="h-fit p-5 sm:p-6">
+          <div className="space-y-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 sm:text-xs">
+              Form Aduan Publik
+            </p>
+            <h1 className="text-2xl font-semibold text-slate-950 sm:text-3xl">
+              Sampaikan kendala Anda secara cepat
+            </h1>
             <p className="text-sm leading-6 text-slate-600">
-              Lengkapi detail pelaporan berikut agar tim support dapat melakukan validasi,
-              klasifikasi, dan penanganan dengan lebih cepat.
+              Isi data inti berikut agar tim support bisa langsung memproses aduan dengan
+              lebih akurat.
             </p>
           </div>
 
@@ -264,7 +196,7 @@ export default function PublicFormPage() {
             <FieldTextArea
               id="issue-description"
               label="Deskripsi Kendala"
-              placeholder="Jelaskan kronologi, waktu kejadian, area terdampak, dan dampak operasional yang dirasakan."
+              placeholder="Jelaskan kronologi singkat, waktu kejadian, serta dampak yang dirasakan."
               value={values.description}
               onChange={(event) => updateField("description", event.target.value)}
               error={errors.description}
@@ -288,8 +220,7 @@ export default function PublicFormPage() {
 
           <div className="mt-5 flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm leading-6 text-slate-600">
-              Sudah memiliki kode tiket? Gunakan halaman tracking untuk melihat status
-              penanganan terbaru.
+              Sudah punya kode tiket? Cek progres terbaru lewat halaman tracking.
             </p>
             <ButtonLink to="/tracking" variant="secondary" className="sm:w-auto">
               Lacak Status
@@ -299,7 +230,7 @@ export default function PublicFormPage() {
       </main>
 
       <footer className="px-1 pb-2 text-center text-[11px] uppercase tracking-[0.18em] text-slate-500 sm:text-xs">
-        Portal ini dirancang untuk pengelolaan aduan yang cepat, transparan, dan terukur.
+        Portal aduan publik untuk proses pelaporan dan pelacakan yang lebih mudah.
       </footer>
     </PublicShell>
   );

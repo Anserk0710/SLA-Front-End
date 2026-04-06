@@ -195,7 +195,7 @@ export default function TrackingPage() {
             <FieldInput
               id="ticket-code"
               label="Kode Tiket"
-              placeholder="Contoh: SLA-2026-00124"
+              placeholder="Contoh: TCK-20260406-014582"
               value={ticketCode}
               onChange={(event) => handleTicketCodeChange(event.target.value)}
               error={errors.ticketCode}

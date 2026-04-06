@@ -1,4 +1,5 @@
 // PublicSuccessPage.tsx
+import { useState } from "react";
 import { useSearchParams } from "react-router";
 import {
   ButtonLink,
@@ -33,6 +34,37 @@ export default function PublicSuccessPage() {
   const [searchParams] = useSearchParams();
   const ticketCode = searchParams.get("ticketCode") ?? "-";
   const status = searchParams.get("status") ?? "Submitted";
+  const [copyFeedback, setCopyFeedback] = useState<"idle" | "success" | "error">("idle");
+
+  const hasTicketCode = ticketCode.trim() !== "-";
+
+  async function handleCopyTicketCode() {
+    if (!hasTicketCode) {
+      return;
+    }
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(ticketCode);
+      } else {
+        const temporaryInput = document.createElement("input");
+        temporaryInput.value = ticketCode;
+        temporaryInput.setAttribute("readonly", "");
+        temporaryInput.style.position = "absolute";
+        temporaryInput.style.left = "-9999px";
+        document.body.appendChild(temporaryInput);
+        temporaryInput.select();
+        document.execCommand("copy");
+        document.body.removeChild(temporaryInput);
+      }
+
+      setCopyFeedback("success");
+      window.setTimeout(() => setCopyFeedback("idle"), 2200);
+    } catch (error) {
+      console.error(error);
+      setCopyFeedback("error");
+    }
+  }
 
   return (
     <PublicShell>
@@ -49,13 +81,33 @@ export default function PublicSuccessPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <DetailCard
               label="Kode Tiket"
-              value={<span className="text-lg sm:text-xl">{ticketCode}</span>}
+              value={
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-lg sm:text-xl">{ticketCode}</span>
+                  <button
+                    type="button"
+                    onClick={handleCopyTicketCode}
+                    disabled={!hasTicketCode}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {copyFeedback === "success" ? "Tersalin" : "Salin"}
+                  </button>
+                </div>
+              }
             />
             <DetailCard
               label="Status Awal"
               value={<span className="text-lg sm:text-xl">{status}</span>}
             />
           </div>
+
+          {copyFeedback === "error" ? (
+            <div className="mt-4">
+              <InlineNotice variant="error">
+                Gagal menyalin kode tiket. Silakan salin manual.
+              </InlineNotice>
+            </div>
+          ) : null}
 
           <div className="mt-5">
             <InlineNotice variant="success">
