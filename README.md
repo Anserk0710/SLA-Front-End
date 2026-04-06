@@ -97,6 +97,59 @@ http://127.0.0.1:8000/api/v1
 
 Pastikan backend sudah berjalan sebelum mengakses form publik, tracking, atau login internal.
 
+## Deploy Frontend ke Vercel
+
+Frontend ini cocok dideploy sebagai project Vercel terpisah dari backend.
+
+### 1. Siapkan URL backend production
+
+Sebelum deploy frontend, pastikan backend Vercel Anda sudah aktif dan punya base URL yang bisa diakses publik, misalnya:
+
+```text
+https://backend-anda.vercel.app/api/v1
+```
+
+Nilai ini akan dipakai sebagai `VITE_API_BASE_URL`.
+
+### 2. Buat project Vercel khusus `frontend/`
+
+Langkah yang disarankan:
+
+1. Import repo frontend ke Vercel.
+2. Set `Root Directory` ke `frontend`.
+3. Biarkan framework terdeteksi sebagai `Vite`.
+4. Isi environment variable `VITE_API_BASE_URL`.
+5. Deploy.
+
+### 3. Tambahkan environment variable di Vercel
+
+| Variable | Wajib | Keterangan |
+| --- | --- | --- |
+| `VITE_API_BASE_URL` | Ya | URL backend publik sampai prefix `/api/v1` |
+
+Contoh:
+
+```text
+VITE_API_BASE_URL=https://backend-anda.vercel.app/api/v1
+```
+
+Jika nilai environment variable diubah, frontend perlu dideploy ulang agar build baru memakai nilai terbaru.
+
+### 4. SPA routing di Vercel
+
+Repo ini sudah disiapkan dengan `vercel.json` agar route seperti:
+
+- `/tracking`
+- `/login`
+- `/admin`
+- `/admin/tickets`
+
+tetap diarahkan ke `index.html` dan ditangani oleh React Router.
+
+### 5. Setelah frontend online
+
+Tambahkan domain frontend Vercel ke `CORS_ORIGINS` backend, lalu redeploy backend agar browser mengizinkan request lintas origin.
+
 ## Kredensial Login Default
 
 Jika backend dijalankan dengan seed default, akun berikut bisa dipakai untuk mencoba halaman login:

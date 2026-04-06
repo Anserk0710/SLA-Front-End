@@ -2,11 +2,14 @@ import { createBrowserRouter } from "react-router";
 import AppShell from "../components/layout/AppShell";
 import DashboardPage from "../pages/admin/DashboardPage";
 import LoginPage from "../pages/admin/LoginPage";
+import TicketDetailPage from "../pages/admin/TicketDetailPage";
 import TicketListPage from "../pages/admin/TicketListPage";
+import UnauthorizedPage from "../pages/UnauthorizedPage";
 import PublicFormPage from "../pages/public/PublicFormPage";
 import PublicSuccessPage from "../pages/public/PublicSuccessPage";
 import TrackingPage from "../pages/public/TrackingPage";
 import PrivateRoute from "../routes/PrivateRoute";
+import RoleRoute from "../routes/RoleRoute";
 
 export const router = createBrowserRouter([
   {
@@ -26,19 +29,32 @@ export const router = createBrowserRouter([
     element: <LoginPage />,
   },
   {
+    path: "/unauthorized",
+    element: <UnauthorizedPage />,
+  },
+  {
     element: <PrivateRoute />,
     children: [
       {
-        path: "/admin",
-        element: <AppShell />,
+        element: <RoleRoute allowedRoles={["admin", "head"]} />,
         children: [
           {
-            index: true,
-            element: <DashboardPage />,
-          },
-          {
-            path: "tickets",
-            element: <TicketListPage />,
+            path: "/admin",
+            element: <AppShell />,
+            children: [
+              {
+                index: true,
+                element: <DashboardPage />,
+              },
+              {
+                path: "tickets",
+                element: <TicketListPage />,
+              },
+              {
+                path: "tickets/:ticketId",
+                element: <TicketDetailPage />,
+              },
+            ],
           },
         ],
       },

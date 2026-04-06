@@ -2,6 +2,7 @@
 import axios from "axios";
 import { useEffect, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router";
+import { apiBaseUrl } from "../../api/axios";
 import { trackPublicTicket } from "../../api/ticket.api";
 import {
   DetailCard,
@@ -63,7 +64,7 @@ function getTrackingErrorMessage(error: unknown) {
     }
 
     if (!error.response) {
-      return "Backend tidak merespons. Pastikan server API aktif di http://localhost:8000.";
+      return `Backend tidak merespons. Periksa kembali konfigurasi API atau pastikan server aktif di ${apiBaseUrl}.`;
     }
 
     if (error.response.status === 404) {

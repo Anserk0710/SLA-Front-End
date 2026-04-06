@@ -1,10 +1,17 @@
 import axios from 'axios';
 import { clearAuthSession, getToken } from '../lib/auth';
 
-const apiBaseUrl =
+const fallbackApiBaseUrl = 'http://127.0.0.1:8000/api/v1';
+
+function normalizeApiBaseUrl(value: string) {
+    return value.replace(/\/+$/, '');
+}
+
+export const apiBaseUrl = normalizeApiBaseUrl(
     import.meta.env.VITE_API_BASE_URL ??
     import.meta.env.VITE_API_URL ??
-    'http://127.0.0.1:8000/api/v1';
+    fallbackApiBaseUrl
+);
 
 export const api = axios.create({
     baseURL: apiBaseUrl,

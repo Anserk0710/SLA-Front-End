@@ -7,6 +7,7 @@ import type {
   TextareaHTMLAttributes,
 } from "react";
 import { Link, useLocation, type LinkProps } from "react-router";
+import { LoadingInline } from "../feedback/LoadingIndicator";
 
 function cn(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ");
@@ -284,7 +285,11 @@ export function SubmitButton({
         className
       )}
     >
-      {loading ? loadingText : idleText}
+      {loading ? (
+        <LoadingInline label={loadingText} spinnerClassName="text-white" />
+      ) : (
+        idleText
+      )}
     </button>
   );
 }

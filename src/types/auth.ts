@@ -1,9 +1,6 @@
 export type Role = {
     id: string;
-    full_name: string;
-    email: string;
-    is_active: boolean;
-    role: Role;
+    name: string;
 };
 
 export type User = {
