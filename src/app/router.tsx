@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router";
 import AppShell from "../components/layout/AppShell";
+import TechnicianShell from "../components/layout/TechnicianShell";
 import DashboardPage from "../pages/admin/DashboardPage";
 import LoginPage from "../pages/admin/LoginPage";
 import TicketDetailPage from "../pages/admin/TicketDetailPage";
@@ -8,6 +9,8 @@ import UnauthorizedPage from "../pages/UnauthorizedPage";
 import PublicFormPage from "../pages/public/PublicFormPage";
 import PublicSuccessPage from "../pages/public/PublicSuccessPage";
 import TrackingPage from "../pages/public/TrackingPage";
+import MyAssignedTicketsPage from "../pages/technician/MyAssignedTicketsPage";
+import TechnicianTicketDetailPage from "../pages/technician/TechnicianTicketDetailPage";
 import PrivateRoute from "../routes/PrivateRoute";
 import RoleRoute from "../routes/RoleRoute";
 
@@ -36,23 +39,30 @@ export const router = createBrowserRouter([
     element: <PrivateRoute />,
     children: [
       {
-        element: <RoleRoute allowedRoles={["admin", "head"]} />,
+        element: <RoleRoute allowedRoles={["ADMIN", "HEAD"]} />,
         children: [
           {
             path: "/admin",
             element: <AppShell />,
             children: [
-              {
-                index: true,
-                element: <DashboardPage />,
-              },
-              {
-                path: "tickets",
-                element: <TicketListPage />,
-              },
+              { index: true, element: <DashboardPage /> },
+              { path: "tickets", element: <TicketListPage /> },
+              { path: "tickets/:ticketId", element: <TicketDetailPage /> },
+            ],
+          },
+        ],
+      },
+      {
+        element: <RoleRoute allowedRoles={["TECHNICIAN"]} />,
+        children: [
+          {
+            path: "/technician",
+            element: <TechnicianShell />,
+            children: [
+              { index: true, element: <MyAssignedTicketsPage /> },
               {
                 path: "tickets/:ticketId",
-                element: <TicketDetailPage />,
+                element: <TechnicianTicketDetailPage />,
               },
             ],
           },
