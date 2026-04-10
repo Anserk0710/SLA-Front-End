@@ -5,6 +5,7 @@ import {
   submitCheckIn,
   submitResolution,
 } from "../../api/technician.api";
+import { reverseGeocodeCoordinates } from "../../api/location.api";
 import InternalStatusBadge from "../../components/status/InternalStatusBadge";
 import type { TechnicianTicketDetail } from "../../types/technician-ticket";
 
@@ -134,6 +135,7 @@ export default function TechnicianTicketDetailPage() {
   const [checkinPhotoPreviewUrl, setCheckinPhotoPreviewUrl] = useState<string | null>(null);
   const [checkinProgress, setCheckinProgress] = useState(0);
   const [checkinLoading, setCheckinLoading] = useState(false);
+  const [checkinAddressLoading, setCheckinAddressLoading] = useState(false);
 
   const [resolutionAddress, setResolutionAddress] = useState("");
   const [resolutionNote, setResolutionNote] = useState("");
@@ -141,6 +143,7 @@ export default function TechnicianTicketDetailPage() {
   const [resolutionVideoPreviewUrl, setResolutionVideoPreviewUrl] = useState<string | null>(null);
   const [resolutionProgress, setResolutionProgress] = useState(0);
   const [resolutionLoading, setResolutionLoading] = useState(false);
+  const [resolutionAddressLoading, setResolutionAddressLoading] = useState(false);
 
   const [actionMessage, setActionMessage] = useState("");
   const [actionError, setActionError] = useState("");
@@ -314,6 +317,10 @@ export default function TechnicianTicketDetailPage() {
 
     setCheckinPhoto(file);
     closeCheckinCamera();
+    await fillAddressFromCurrentLocation(
+      "checkin",
+      "Foto berhasil diambil dan alamat check-in terisi otomatis dari lokasi saat ini."
+    );
   }
 
   function closeResolutionCamera() {
@@ -437,6 +444,42 @@ export default function TechnicianTicketDetailPage() {
     const recorder = resolutionRecorderRef.current;
     if (!recorder || recorder.state !== "recording") return;
     recorder.stop();
+  }
+
+  async function fillAddressFromCurrentLocation(
+    target: "checkin" | "resolution",
+    successMessage: string
+  ) {
+    const setLoading =
+      target === "checkin" ? setCheckinAddressLoading : setResolutionAddressLoading;
+    const setAddress =
+      target === "checkin" ? setCheckinAddress : setResolutionAddress;
+
+    try {
+      setLoading(true);
+      setActionError("");
+      setActionMessage("");
+
+      const coordinates = await getCurrentCoordinates();
+      const fullAddress = await reverseGeocodeCoordinates(coordinates);
+
+      setAddress(fullAddress);
+      setActionMessage(successMessage);
+    } catch (err: unknown) {
+      console.error(err);
+      setActionError(
+        getErrorDetail(err, "Gagal mengambil alamat lengkap dari lokasi saat ini.")
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function autofillAddress(target: "checkin" | "resolution") {
+    await fillAddressFromCurrentLocation(
+      target,
+      "Alamat lengkap berhasil diisi otomatis dari lokasi saat ini."
+    );
   }
 
   async function handleCheckInSubmit(event: FormEvent<HTMLFormElement>) {
@@ -656,6 +699,10 @@ export default function TechnicianTicketDetailPage() {
                 onChange={(e) => setCheckinAddress(e.target.value)}
                 placeholder="Tulis alamat / patokan lokasi check-in"
               />
+              <p className="text-xs text-slate-500">
+                Setelah menekan `Ambil Foto`, alamat check-in akan terisi otomatis dari
+                lokasi saat ini. Anda tetap bisa mengeditnya bila diperlukan.
+              </p>
 
               <textarea
                 className="min-h-24 w-full rounded-lg border border-slate-300 px-3 py-2"
@@ -694,8 +741,14 @@ export default function TechnicianTicketDetailPage() {
               </div>
 
               <p className="text-xs text-slate-500">
-                Koordinat lokasi diambil otomatis saat menyimpan check-in.
+                Alamat otomatis menggunakan data Geoapify dari lokasi saat ini.
               </p>
+
+              {checkinAddressLoading ? (
+                <p className="text-sm text-slate-500">
+                  Mengambil alamat otomatis dari lokasi saat ini...
+                </p>
+              ) : null}
 
               {checkinLoading ? (
                 <p className="text-sm text-slate-500">
@@ -705,7 +758,7 @@ export default function TechnicianTicketDetailPage() {
 
               <button
                 type="submit"
-                disabled={checkinLoading}
+                disabled={checkinLoading || checkinAddressLoading}
                 className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
               >
                 {checkinLoading ? "Menyimpan..." : "Simpan Check-in"}
@@ -746,6 +799,23 @@ export default function TechnicianTicketDetailPage() {
                 onChange={(e) => setResolutionAddress(e.target.value)}
                 placeholder="Tulis alamat / patokan lokasi submit selesai"
               />
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    void autofillAddress("resolution");
+                  }}
+                  disabled={resolutionAddressLoading}
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-60"
+                >
+                  {resolutionAddressLoading
+                    ? "Mengambil Alamat..."
+                    : "Isi Alamat Otomatis"}
+                </button>
+                <p className="text-xs text-slate-500">
+                  Ambil alamat lengkap sampai kode pos dan nama gedung jika tersedia.
+                </p>
+              </div>
 
               <textarea
                 className="min-h-28 w-full rounded-lg border border-slate-300 px-3 py-2"
@@ -784,7 +854,7 @@ export default function TechnicianTicketDetailPage() {
               </div>
 
               <p className="text-xs text-slate-500">
-                Koordinat lokasi diambil otomatis saat menyimpan bukti selesai.
+                Alamat otomatis menggunakan data Geoapify dari lokasi saat ini.
               </p>
 
               {resolutionLoading ? (
@@ -795,7 +865,9 @@ export default function TechnicianTicketDetailPage() {
 
               <button
                 type="submit"
-                disabled={resolutionLoading || resolutionRecording}
+                disabled={
+                  resolutionLoading || resolutionRecording || resolutionAddressLoading
+                }
                 className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
               >
                 {resolutionLoading ? "Menyimpan..." : "Simpan Bukti Selesai"}
