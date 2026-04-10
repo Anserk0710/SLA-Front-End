@@ -18,9 +18,49 @@ type Coordinates = {
   longitude: string;
 };
 
+type CameraFacingMode = "user" | "environment";
+
 function stopStream(stream: MediaStream | null) {
   if (!stream) return;
   stream.getTracks().forEach((track) => track.stop());
+}
+
+function toggleFacingMode(current: CameraFacingMode): CameraFacingMode {
+  return current === "user" ? "environment" : "user";
+}
+
+async function getCameraStream(facingMode: CameraFacingMode) {
+  const attempts: Array<MediaTrackConstraints | boolean> = [
+    { facingMode: { exact: facingMode } },
+    { facingMode: { ideal: facingMode } },
+    { facingMode },
+    true,
+  ];
+
+  let lastError: unknown = null;
+
+  for (const videoConstraint of attempts) {
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        video: videoConstraint,
+        audio: false,
+      });
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError ?? new Error("Tidak dapat mengakses kamera.");
+}
+
+async function attachStreamToPreview(
+  preview: HTMLVideoElement | null,
+  stream: MediaStream
+) {
+  if (!preview) return;
+
+  preview.srcObject = stream;
+  await preview.play();
 }
 
 function getErrorDetail(error: unknown, fallbackMessage: string) {
@@ -77,12 +117,15 @@ export default function TechnicianTicketDetailPage() {
   const checkinPreviewRef = useRef<HTMLVideoElement | null>(null);
   const checkinStreamRef = useRef<MediaStream | null>(null);
   const [checkinCameraOpen, setCheckinCameraOpen] = useState(false);
+  const [checkinFacingMode, setCheckinFacingMode] = useState<CameraFacingMode>("user");
 
   const resolutionPreviewRef = useRef<HTMLVideoElement | null>(null);
   const resolutionStreamRef = useRef<MediaStream | null>(null);
   const resolutionRecorderRef = useRef<MediaRecorder | null>(null);
   const resolutionChunksRef = useRef<Blob[]>([]);
   const [resolutionCameraOpen, setResolutionCameraOpen] = useState(false);
+  const [resolutionFacingMode, setResolutionFacingMode] =
+    useState<CameraFacingMode>("user");
   const [resolutionRecording, setResolutionRecording] = useState(false);
 
   const [checkinAddress, setCheckinAddress] = useState("");
@@ -189,7 +232,7 @@ export default function TechnicianTicketDetailPage() {
     setCheckinCameraOpen(false);
   }
 
-  async function openCheckinCamera() {
+  async function openCheckinCamera(facingMode: CameraFacingMode = checkinFacingMode) {
     setActionError("");
     setActionMessage("");
 
@@ -198,22 +241,30 @@ export default function TechnicianTicketDetailPage() {
       return;
     }
 
+    let stream: MediaStream | null = null;
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: "environment" },
-        },
-        audio: false,
-      });
+      stopStream(checkinStreamRef.current);
+
+      stream = await getCameraStream(facingMode);
 
       checkinStreamRef.current = stream;
+      setCheckinFacingMode(facingMode);
       setCheckinCameraOpen(true);
+      await attachStreamToPreview(checkinPreviewRef.current, stream);
     } catch (err) {
+      stopStream(stream);
+      checkinStreamRef.current = null;
+      setCheckinCameraOpen(false);
       console.error(err);
       setActionError(
         "Kamera gagal dibuka. Pastikan izin kamera diaktifkan, lalu coba lagi."
       );
     }
+  }
+
+  async function switchCheckinCamera() {
+    await openCheckinCamera(toggleFacingMode(checkinFacingMode));
   }
 
   async function captureCheckinPhoto() {
@@ -273,7 +324,9 @@ export default function TechnicianTicketDetailPage() {
     setResolutionCameraOpen(false);
   }
 
-  async function openResolutionCamera() {
+  async function openResolutionCamera(
+    facingMode: CameraFacingMode = resolutionFacingMode
+  ) {
     setActionError("");
     setActionMessage("");
 
@@ -282,22 +335,31 @@ export default function TechnicianTicketDetailPage() {
       return;
     }
 
+    let stream: MediaStream | null = null;
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: "environment" },
-        },
-        audio: false,
-      });
+      stopStream(resolutionStreamRef.current);
+
+      stream = await getCameraStream(facingMode);
 
       resolutionStreamRef.current = stream;
+      setResolutionFacingMode(facingMode);
       setResolutionCameraOpen(true);
+      await attachStreamToPreview(resolutionPreviewRef.current, stream);
     } catch (err) {
+      stopStream(stream);
+      resolutionStreamRef.current = null;
+      setResolutionCameraOpen(false);
       console.error(err);
       setActionError(
         "Kamera gagal dibuka. Pastikan izin kamera diaktifkan, lalu coba lagi."
       );
     }
+  }
+
+  async function switchResolutionCamera() {
+    if (resolutionRecording) return;
+    await openResolutionCamera(toggleFacingMode(resolutionFacingMode));
   }
 
   function startResolutionRecording() {
@@ -557,7 +619,8 @@ export default function TechnicianTicketDetailPage() {
         <section className="rounded-xl border border-slate-200 p-5">
           <h3 className="text-lg font-bold">Check-in Form</h3>
           <p className="mt-1 text-sm text-slate-500">
-            Gunakan kamera belakang jika tersedia. Lokasi akan diambil otomatis saat submit.
+            Kamera depan dibuka otomatis. Anda bisa ganti kamera jika diperlukan.
+            Lokasi akan diambil otomatis saat submit.
           </p>
 
           {ticket.checkin ? (
@@ -593,7 +656,9 @@ export default function TechnicianTicketDetailPage() {
               {!checkinCameraOpen ? (
                 <button
                   type="button"
-                  onClick={openCheckinCamera}
+                  onClick={() => {
+                    void openCheckinCamera();
+                  }}
                   className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700"
                 >
                   Buka Kamera
@@ -614,6 +679,13 @@ export default function TechnicianTicketDetailPage() {
                       className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white"
                     >
                       Ambil Foto
+                    </button>
+                    <button
+                      type="button"
+                      onClick={switchCheckinCamera}
+                      className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700"
+                    >
+                      Ganti Kamera
                     </button>
                     <button
                       type="button"
@@ -703,7 +775,9 @@ export default function TechnicianTicketDetailPage() {
               {!resolutionCameraOpen ? (
                 <button
                   type="button"
-                  onClick={openResolutionCamera}
+                  onClick={() => {
+                    void openResolutionCamera();
+                  }}
                   className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700"
                 >
                   Buka Kamera
@@ -735,6 +809,14 @@ export default function TechnicianTicketDetailPage() {
                         Stop Rekam
                       </button>
                     )}
+                    <button
+                      type="button"
+                      onClick={switchResolutionCamera}
+                      disabled={resolutionRecording}
+                      className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-60"
+                    >
+                      Ganti Kamera
+                    </button>
                     <button
                       type="button"
                       onClick={closeResolutionCamera}
