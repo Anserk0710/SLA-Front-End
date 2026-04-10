@@ -13,6 +13,8 @@ import {
   SubmitButton,
   SurfaceCard,
 } from "../../components/public/PublicUi";
+import { getApiErrorMessage } from "../../lib/api-error";
+import { logError } from "../../lib/logger";
 
 type FormValues = {
   full_name: string;
@@ -101,8 +103,8 @@ export default function PublicFormPage() {
         )}`
       );
     } catch (error) {
-      console.error(error);
-      setSubmitError("Gagal mengirim aduan. Silakan coba lagi dalam beberapa saat.");
+      logError(error);
+      setSubmitError(getApiErrorMessage(error, "Gagal mengirim aduan. Silakan coba lagi dalam beberapa saat."));
     } finally {
       setLoading(false);
     }
@@ -235,3 +237,4 @@ export default function PublicFormPage() {
     </PublicShell>
   );
 }
+

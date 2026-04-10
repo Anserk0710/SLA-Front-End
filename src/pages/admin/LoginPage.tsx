@@ -1,7 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import { login } from "../../api/auth.api";
+import { getApiErrorMessage } from "../../lib/api-error";
 import { getToken, getUser, setAuthSession } from "../../lib/auth";
+import { logError } from "../../lib/logger";
 
 function getHomeByRole(roleName?: string) {
   const normalizedRole = roleName?.trim().toLowerCase();
@@ -34,8 +36,8 @@ export default function LoginPage() {
       setAuthSession(result.access_token, result.user);
       navigate(getHomeByRole(result.user.role.name), { replace: true });
     } catch (err: unknown) {
-      setError("Login gagal. Periksa email dan password.");
-      console.error(err);
+      setError(getApiErrorMessage(err, "Login gagal. Periksa email dan password."));
+      logError(err);
     } finally {
       setLoading(false);
     }
@@ -97,3 +99,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

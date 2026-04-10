@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router";
 import {
   getAssignedTicketDetail,
@@ -7,6 +7,8 @@ import {
 } from "../../api/technician.api";
 import { reverseGeocodeCoordinates } from "../../api/location.api";
 import InternalStatusBadge from "../../components/status/InternalStatusBadge";
+import { getApiErrorMessage } from "../../lib/api-error";
+import { logError } from "../../lib/logger";
 import type { TechnicianTicketDetail } from "../../types/technician-ticket";
 
 function formatDateTime(value: string | null) {
@@ -65,19 +67,7 @@ async function attachStreamToPreview(
 }
 
 function getErrorDetail(error: unknown, fallbackMessage: string) {
-  if (error instanceof Error && error.message.trim()) {
-    return error.message;
-  }
-
-  if (typeof error === "object" && error !== null && "response" in error) {
-    const response = (error as { response?: { data?: { detail?: unknown } } }).response;
-    const detail = response?.data?.detail;
-    if (typeof detail === "string" && detail.trim()) {
-      return detail;
-    }
-  }
-
-  return fallbackMessage;
+  return getApiErrorMessage(error, fallbackMessage);
 }
 
 function getCurrentCoordinates(): Promise<Coordinates> {
@@ -95,7 +85,7 @@ function getCurrentCoordinates(): Promise<Coordinates> {
         });
       },
       (error) => {
-        console.error(error);
+        logError(error);
         reject(new Error("Gagal mengambil lokasi. Pastikan izin lokasi diberikan."));
       },
       {
@@ -157,8 +147,8 @@ export default function TechnicianTicketDetailPage() {
       const data = await getAssignedTicketDetail(ticketId);
       setTicket(data);
     } catch (err) {
-      console.error(err);
-      setError("Gagal memuat detail ticket technician.");
+      logError(err);
+      setError(getApiErrorMessage(err, "Gagal memuat detail ticket technician."));
     } finally {
       setLoading(false);
     }
@@ -202,7 +192,7 @@ export default function TechnicianTicketDetailPage() {
 
     preview.srcObject = checkinStreamRef.current;
     void preview.play().catch((err) => {
-      console.error(err);
+      logError(err);
       setActionError("Gagal menampilkan preview kamera.");
     });
   }, [checkinCameraOpen]);
@@ -213,7 +203,7 @@ export default function TechnicianTicketDetailPage() {
 
     preview.srcObject = resolutionStreamRef.current;
     void preview.play().catch((err) => {
-      console.error(err);
+      logError(err);
       setActionError("Gagal menampilkan preview kamera.");
     });
   }, [resolutionCameraOpen]);
@@ -270,7 +260,7 @@ export default function TechnicianTicketDetailPage() {
       stopStream(stream);
       checkinStreamRef.current = null;
       setCheckinCameraOpen(false);
-      console.error(err);
+      logError(err);
       setActionError(
         "Kamera gagal dibuka. Pastikan izin kamera diaktifkan, lalu coba lagi."
       );
@@ -368,7 +358,7 @@ export default function TechnicianTicketDetailPage() {
       stopStream(stream);
       resolutionStreamRef.current = null;
       setResolutionCameraOpen(false);
-      console.error(err);
+      logError(err);
       setActionError(
         "Kamera gagal dibuka. Pastikan izin kamera diaktifkan, lalu coba lagi."
       );
@@ -466,7 +456,7 @@ export default function TechnicianTicketDetailPage() {
       setAddress(fullAddress);
       setActionMessage(successMessage);
     } catch (err: unknown) {
-      console.error(err);
+      logError(err);
       setActionError(
         getErrorDetail(err, "Gagal mengambil alamat lengkap dari lokasi saat ini.")
       );
@@ -517,7 +507,7 @@ export default function TechnicianTicketDetailPage() {
       setCheckinPhoto(null);
       await loadDetail();
     } catch (err: unknown) {
-      console.error(err);
+      logError(err);
       setActionError(getErrorDetail(err, "Gagal menyimpan check-in."));
     } finally {
       setCheckinLoading(false);
@@ -567,7 +557,7 @@ export default function TechnicianTicketDetailPage() {
       setResolutionVideo(null);
       await loadDetail();
     } catch (err: unknown) {
-      console.error(err);
+      logError(err);
       setActionError(getErrorDetail(err, "Gagal menyimpan bukti selesai."));
     } finally {
       setResolutionLoading(false);
@@ -968,3 +958,4 @@ export default function TechnicianTicketDetailPage() {
     </div>
   );
 }
+

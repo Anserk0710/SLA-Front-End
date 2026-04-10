@@ -11,6 +11,7 @@ import {
   SectionHeader,
   SurfaceCard,
 } from "../../components/public/PublicUi";
+import { logError } from "../../lib/logger";
 
 const nextSteps = [
   {
@@ -61,7 +62,7 @@ export default function PublicSuccessPage() {
       setCopyFeedback("success");
       window.setTimeout(() => setCopyFeedback("idle"), 2200);
     } catch (error) {
-      console.error(error);
+      logError(error);
       setCopyFeedback("error");
     }
   }
@@ -135,3 +136,4 @@ export default function PublicSuccessPage() {
     </PublicShell>
   );
 }
+

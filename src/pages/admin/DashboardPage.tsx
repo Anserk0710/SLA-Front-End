@@ -1,6 +1,8 @@
 import { Link } from "react-router";
 import { useEffect, useMemo, useState } from "react";
 import { getDashboardSummary } from "../../api/dashboard.api";
+import { getApiErrorMessage } from "../../lib/api-error";
+import { logError } from "../../lib/logger";
 import type { DashboardSummary } from "../../types/admin-ticket";
 
 const emptySummary: DashboardSummary = {
@@ -29,8 +31,8 @@ export default function DashboardPage() {
         const data = await getDashboardSummary();
         setSummary(data);
       } catch (err) {
-        console.error(err);
-        setError("Gagal memuat dashboard. Silakan coba lagi.");
+        logError(err);
+        setError(getApiErrorMessage(err, "Gagal memuat dashboard. Silakan coba lagi."));
       } finally {
         setLoading(false);
       }
@@ -204,3 +206,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

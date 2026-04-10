@@ -4,6 +4,8 @@ import { getInternalTickets } from "../../api/internal-ticket.api";
 import { LoadingState } from "../../components/feedback/LoadingIndicator";
 import InternalStatusBadge from "../../components/status/InternalStatusBadge";
 import { internalStatusFilterOptions } from "../../components/status/internalStatus";
+import { getApiErrorMessage } from "../../lib/api-error";
+import { logError } from "../../lib/logger";
 import type { TicketListItem } from "../../types/admin-ticket";
 
 function formatDateTime(value: string) {
@@ -28,8 +30,8 @@ export default function TicketListPage() {
       const data = await getInternalTickets(params);
       setTickets(data);
     } catch (err) {
-      console.error(err);
-      setError("Gagal memuat daftar ticket. Silakan coba lagi.");
+      logError(err);
+      setError(getApiErrorMessage(err, "Gagal memuat daftar ticket. Silakan coba lagi."));
     } finally {
       setLoading(false);
     }
@@ -258,3 +260,4 @@ export default function TicketListPage() {
     </div>
   );
 }
+

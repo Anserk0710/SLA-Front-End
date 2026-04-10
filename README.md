@@ -58,6 +58,8 @@ Variabel yang digunakan:
 | Variable | Keterangan |
 | --- | --- |
 | `VITE_API_BASE_URL` | Base URL backend FastAPI, default `http://127.0.0.1:8000/api/v1` |
+| `VITE_API_TIMEOUT_MS` | Timeout request umum (ms), default `30000` |
+| `VITE_API_UPLOAD_TIMEOUT_MS` | Timeout request upload file/video (ms), default `120000` |
 
 ### 3. Jalankan development server
 

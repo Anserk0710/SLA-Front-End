@@ -5,6 +5,8 @@ import { getTechnicians } from "../../api/user.api";
 import { LoadingInline, LoadingState } from "../../components/feedback/LoadingIndicator";
 import InternalStatusBadge from "../../components/status/InternalStatusBadge";
 import { formatInternalStatus } from "../../components/status/internalStatus";
+import { getApiErrorMessage } from "../../lib/api-error";
+import { logError } from "../../lib/logger";
 import type { TechnicianOption, TicketDetail } from "../../types/admin-ticket";
 
 function formatDateTime(value: string | null) {
@@ -51,8 +53,8 @@ export default function TicketDetailPage() {
       setResponseNote(ticketData.inital_respons ?? "");
       setSelectedTechnicianIds(ticketData.assigned_technicians.map((item) => item.id));
     } catch (err) {
-      console.error(err);
-      setError("Gagal memuat detail ticket. Silakan coba lagi.");
+      logError(err);
+      setError(getApiErrorMessage(err, "Gagal memuat detail ticket. Silakan coba lagi."));
     } finally {
       setLoading(false);
     }
@@ -87,8 +89,8 @@ export default function TicketDetailPage() {
       await loadDetail();
       setActionMessage("Respon ticket berhasil disimpan.");
     } catch (err) {
-      console.error(err);
-      setActionError("Gagal menyimpan respon. Silakan coba lagi.");
+      logError(err);
+      setActionError(getApiErrorMessage(err, "Gagal menyimpan respon. Silakan coba lagi."));
     } finally {
       setRespondLoading(false);
     }
@@ -113,8 +115,8 @@ export default function TicketDetailPage() {
       await loadDetail();
       setActionMessage("Assign teknisi berhasil disimpan.");
     } catch (err) {
-      console.error(err);
-      setActionError("Gagal menyimpan assign teknisi. Silakan coba lagi.");
+      logError(err);
+      setActionError(getApiErrorMessage(err, "Gagal menyimpan assign teknisi. Silakan coba lagi."));
     } finally {
       setAssignLoading(false);
     }
@@ -377,3 +379,4 @@ export default function TicketDetailPage() {
     </div>
   );
 }
+

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { getAssignedTickets } from "../../api/technician.api";
 import InternalStatusBadge from "../../components/status/InternalStatusBadge";
+import { getApiErrorMessage } from "../../lib/api-error";
+import { logError } from "../../lib/logger";
 import type { TechnicianAssignedTicket } from "../../types/technician-ticket";
 
 function formatDateTime(value: string) {
@@ -21,8 +23,8 @@ export default function MyAssignedTicketsPage() {
         const data = await getAssignedTickets();
         setTickets(data);
       } catch (err) {
-        console.error(err);
-        setError("Gagal memuat assigned tickets.");
+        logError(err);
+        setError(getApiErrorMessage(err, "Gagal memuat assigned tickets."));
       } finally {
         setLoading(false);
       }

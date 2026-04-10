@@ -1,4 +1,4 @@
-import { api } from "./axios";
+import { api, uploadTimeoutMs } from "./axios";
 import type {
     TechnicianActionResponse,
     TechnicianAssignedTicket,
@@ -27,6 +27,7 @@ export async function submitCheckIn(
             headers: {
                 "Content-Type": "multipart/form-data",
             },
+            timeout: uploadTimeoutMs,
             onUploadProgress: (event) => {
                 if (!event.total) return;
                 const percent = Math.round((event.loaded * 100) / event.total);
@@ -50,6 +51,7 @@ export async function submitResolution(
             headers: {
                 "Content-Type": "multipart/form-data",
             },
+            timeout: uploadTimeoutMs,
             onUploadProgress: (event) => {
                 if (!event.total) return;
                 const percent = Math.round((event.loaded * 100) / event.total);

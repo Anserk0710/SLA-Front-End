@@ -2,7 +2,6 @@
 import axios from "axios";
 import { useEffect, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router";
-import { apiBaseUrl } from "../../api/axios";
 import { trackPublicTicket } from "../../api/ticket.api";
 import {
   DetailCard,
@@ -16,6 +15,8 @@ import {
   SurfaceCard,
 } from "../../components/public/PublicUi";
 import PublicStatusBadge from "../../components/status/PublicStatusBadge";
+import { getApiErrorMessage } from "../../lib/api-error";
+import { logError } from "../../lib/logger";
 import type { TrackingTicketResponse } from "../../types/ticket";
 
 type FormErrors = {
@@ -59,20 +60,12 @@ function getProgressIndex(status: string) {
 
 function getTrackingErrorMessage(error: unknown) {
   if (axios.isAxiosError(error)) {
-    if (error.code === "ECONNABORTED") {
-      return "Permintaan ke server terlalu lama. Coba lagi, lalu pastikan backend berjalan normal.";
-    }
-
-    if (!error.response) {
-      return `Backend tidak merespons. Periksa kembali konfigurasi API atau pastikan server aktif di ${apiBaseUrl}.`;
-    }
-
-    if (error.response.status === 404) {
+    if (error.response?.status === 404) {
       return "Tiket tidak ditemukan. Periksa kembali kode tiket dan nomor HP.";
     }
   }
 
-  return "Terjadi kendala saat mengecek status tiket. Silakan coba lagi.";
+  return getApiErrorMessage(error, "Terjadi kendala saat mengecek status tiket. Silakan coba lagi.");
 }
 
 export default function TrackingPage() {
@@ -137,7 +130,7 @@ export default function TrackingPage() {
       const data = await trackPublicTicket(ticketCode.trim(), phoneNumber.trim());
       setResult(data);
     } catch (error: unknown) {
-      console.error(error);
+      logError(error);
       setSubmitError(getTrackingErrorMessage(error));
     } finally {
       setLoading(false);
@@ -296,3 +289,4 @@ export default function TrackingPage() {
     </PublicShell>
   );
 }
+
