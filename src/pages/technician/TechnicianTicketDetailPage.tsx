@@ -216,6 +216,17 @@ export default function TechnicianTicketDetailPage() {
   }, [resolutionCameraOpen]);
 
   useEffect(() => {
+    if (!checkinCameraOpen && !resolutionCameraOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [checkinCameraOpen, resolutionCameraOpen]);
+
+  useEffect(() => {
     return () => {
       stopStream(checkinStreamRef.current);
       stopStream(resolutionStreamRef.current);
@@ -620,7 +631,7 @@ export default function TechnicianTicketDetailPage() {
           <h3 className="text-lg font-bold">Check-in Form</h3>
           <p className="mt-1 text-sm text-slate-500">
             Kamera depan dibuka otomatis. Anda bisa ganti kamera jika diperlukan.
-            Lokasi akan diambil otomatis saat submit.
+            Saat dibuka, kamera tampil penuh di seluruh layar.
           </p>
 
           {ticket.checkin ? (
@@ -664,38 +675,9 @@ export default function TechnicianTicketDetailPage() {
                   Buka Kamera
                 </button>
               ) : (
-                <div className="space-y-3 rounded-lg border border-slate-200 p-3">
-                  <video
-                    ref={checkinPreviewRef}
-                    autoPlay
-                    muted
-                    playsInline
-                    className="h-56 w-full rounded-lg bg-black object-cover"
-                  />
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={captureCheckinPhoto}
-                      className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white"
-                    >
-                      Ambil Foto
-                    </button>
-                    <button
-                      type="button"
-                      onClick={switchCheckinCamera}
-                      className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700"
-                    >
-                      Ganti Kamera
-                    </button>
-                    <button
-                      type="button"
-                      onClick={closeCheckinCamera}
-                      className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700"
-                    >
-                      Tutup Kamera
-                    </button>
-                  </div>
-                </div>
+                <p className="text-xs text-slate-500">
+                  Kamera sedang aktif di mode layar penuh.
+                </p>
               )}
 
               <div>
@@ -783,53 +765,9 @@ export default function TechnicianTicketDetailPage() {
                   Buka Kamera
                 </button>
               ) : (
-                <div className="space-y-3 rounded-lg border border-slate-200 p-3">
-                  <video
-                    ref={resolutionPreviewRef}
-                    autoPlay
-                    muted
-                    playsInline
-                    className="h-56 w-full rounded-lg bg-black object-cover"
-                  />
-                  <div className="flex flex-wrap gap-2">
-                    {!resolutionRecording ? (
-                      <button
-                        type="button"
-                        onClick={startResolutionRecording}
-                        className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white"
-                      >
-                        Mulai Rekam
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={stopResolutionRecording}
-                        className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white"
-                      >
-                        Stop Rekam
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={switchResolutionCamera}
-                      disabled={resolutionRecording}
-                      className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-60"
-                    >
-                      Ganti Kamera
-                    </button>
-                    <button
-                      type="button"
-                      onClick={closeResolutionCamera}
-                      disabled={resolutionRecording}
-                      className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-60"
-                    >
-                      Tutup Kamera
-                    </button>
-                  </div>
-                  {resolutionRecording ? (
-                    <p className="text-xs text-red-600">Sedang merekam video...</p>
-                  ) : null}
-                </div>
+                <p className="text-xs text-slate-500">
+                  Kamera sedang aktif di mode layar penuh.
+                </p>
               )}
 
               <div>
@@ -866,6 +804,95 @@ export default function TechnicianTicketDetailPage() {
           )}
         </section>
       </div>
+
+      {checkinCameraOpen ? (
+        <div className="fixed inset-0 z-50 bg-black">
+          <video
+            ref={checkinPreviewRef}
+            autoPlay
+            muted
+            playsInline
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-x-0 bottom-0 p-4">
+            <div className="mx-auto flex w-full max-w-md flex-wrap justify-center gap-2 rounded-2xl bg-black/55 p-3 backdrop-blur">
+              <button
+                type="button"
+                onClick={captureCheckinPhoto}
+                className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900"
+              >
+                Ambil Foto
+              </button>
+              <button
+                type="button"
+                onClick={switchCheckinCamera}
+                className="rounded-lg border border-white/70 px-4 py-2 text-sm font-medium text-white"
+              >
+                Ganti Kamera
+              </button>
+              <button
+                type="button"
+                onClick={closeCheckinCamera}
+                className="rounded-lg border border-white/70 px-4 py-2 text-sm font-medium text-white"
+              >
+                Tutup Kamera
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {resolutionCameraOpen ? (
+        <div className="fixed inset-0 z-50 bg-black">
+          <video
+            ref={resolutionPreviewRef}
+            autoPlay
+            muted
+            playsInline
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute left-4 top-4 rounded-full bg-red-600 px-3 py-1 text-xs font-medium text-white">
+            {resolutionRecording ? "Merekam..." : "Siap Merekam"}
+          </div>
+          <div className="absolute inset-x-0 bottom-0 p-4">
+            <div className="mx-auto flex w-full max-w-md flex-wrap justify-center gap-2 rounded-2xl bg-black/55 p-3 backdrop-blur">
+              {!resolutionRecording ? (
+                <button
+                  type="button"
+                  onClick={startResolutionRecording}
+                  className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900"
+                >
+                  Mulai Rekam
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={stopResolutionRecording}
+                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Stop Rekam
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={switchResolutionCamera}
+                disabled={resolutionRecording}
+                className="rounded-lg border border-white/70 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+              >
+                Ganti Kamera
+              </button>
+              <button
+                type="button"
+                onClick={closeResolutionCamera}
+                disabled={resolutionRecording}
+                className="rounded-lg border border-white/70 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+              >
+                Tutup Kamera
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
