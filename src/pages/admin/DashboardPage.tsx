@@ -1,9 +1,16 @@
 import { Link } from "react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getDashboardSummary } from "../../api/dashboard.api";
+import { getTechnicians } from "../../api/user.api";
+import { addAdminTicketNotificationsListener } from "../../features/notifications/notification-events";
+import TicketFilterBar from "../../features/tickets/components/TicketFilterBar";
+import {
+  emptyTicketFilterBarValue,
+  type TicketFilterBarValue,
+} from "../../features/tickets/components/ticketFilterBar.shared";
 import { getApiErrorMessage } from "../../lib/api-error";
 import { logError } from "../../lib/logger";
-import type { DashboardSummary } from "../../types/admin-ticket";
+import type { DashboardSummary, TechnicianOption } from "../../types/admin-ticket";
 
 const emptySummary: DashboardSummary = {
   total_tickets: 0,
@@ -11,6 +18,7 @@ const emptySummary: DashboardSummary = {
   sudah_direspon: 0,
   on_progress: 0,
   selesai: 0,
+  sla_breached: 0,
 };
 
 function formatPercentage(value: number, total: number) {
@@ -20,16 +28,50 @@ function formatPercentage(value: number, total: number) {
 
 export default function DashboardPage() {
   const [summary, setSummary] = useState<DashboardSummary>(emptySummary);
+  const [technicians, setTechnicians] = useState<TechnicianOption[]>([]);
+  const [filters, setFilters] = useState<TicketFilterBarValue>(emptyTicketFilterBarValue);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadSummary = useCallback(async (
+    nextFilters: TicketFilterBarValue,
+    options?: { background?: boolean }
+  ) => {
+    try {
+      if (options?.background) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError("");
+      const data = await getDashboardSummary(nextFilters);
+      setSummary(data);
+    } catch (err) {
+      logError(err);
+      setError(getApiErrorMessage(err, "Gagal memuat dashboard. Silakan coba lagi."));
+    } finally {
+      if (options?.background) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
+    }
+  }, []);
 
   useEffect(() => {
-    async function load() {
+    async function initializeDashboard() {
       try {
         setLoading(true);
         setError("");
-        const data = await getDashboardSummary();
-        setSummary(data);
+
+        const [summaryData, technicianData] = await Promise.all([
+          getDashboardSummary(emptyTicketFilterBarValue),
+          getTechnicians(),
+        ]);
+
+        setSummary(summaryData);
+        setTechnicians(technicianData);
       } catch (err) {
         logError(err);
         setError(getApiErrorMessage(err, "Gagal memuat dashboard. Silakan coba lagi."));
@@ -38,8 +80,14 @@ export default function DashboardPage() {
       }
     }
 
-    void load();
+    void initializeDashboard();
   }, []);
+
+  useEffect(() => {
+    return addAdminTicketNotificationsListener(() => {
+      void loadSummary(filters, { background: true });
+    });
+  }, [filters, loadSummary]);
 
   const total = summary.total_tickets;
   const activeTickets = Math.max(total - summary.selesai, 0);
@@ -90,6 +138,9 @@ export default function DashboardPage() {
           <p className="text-sm text-slate-500">
             Ringkasan ticket operasional untuk admin dan head.
           </p>
+          {refreshing ? (
+            <p className="mt-1 text-xs text-sky-700">Memperbarui ringkasan ticket terbaru...</p>
+          ) : null}
         </div>
 
         <Link
@@ -99,6 +150,21 @@ export default function DashboardPage() {
           Buka Ticket List
         </Link>
       </div>
+
+      <TicketFilterBar
+        key={`${filters.status}|${filters.category}|${filters.dateFrom}|${filters.dateTo}|${filters.technicianId}`}
+        initialValue={filters}
+        technicians={technicians}
+        disabled={loading}
+        onApply={async (nextFilters) => {
+          setFilters(nextFilters);
+          await loadSummary(nextFilters);
+        }}
+        onReset={async () => {
+          setFilters(emptyTicketFilterBarValue);
+          await loadSummary(emptyTicketFilterBarValue);
+        }}
+      />
 
       {error ? (
         <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

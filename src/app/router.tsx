@@ -13,6 +13,7 @@ import MyAssignedTicketsPage from "../pages/technician/MyAssignedTicketsPage";
 import TechnicianTicketDetailPage from "../pages/technician/TechnicianTicketDetailPage";
 import PrivateRoute from "../routes/PrivateRoute";
 import RoleRoute from "../routes/RoleRoute";
+import ReportsPage from "../pages/admin/ReportsPage";
 
 export const router = createBrowserRouter([
   {
@@ -48,6 +49,7 @@ export const router = createBrowserRouter([
               { index: true, element: <DashboardPage /> },
               { path: "tickets", element: <TicketListPage /> },
               { path: "tickets/:ticketId", element: <TicketDetailPage /> },
+              { path: "reports", element: <ReportsPage /> },
             ],
           },
         ],

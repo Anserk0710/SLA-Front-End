@@ -19,6 +19,7 @@ export type DashboardSummary = {
     sudah_direspon: number;
     on_progress: number;
     selesai: number;
+    sla_breached: number;
 };
 
 export type TicketListItem = {
@@ -30,6 +31,8 @@ export type TicketListItem = {
     phone_number: string;
     public_status: string;
     internal_status: string;
+    sla_deadline: string | null;
+    is_sla_breached: boolean;
     created_at: string;
     assigned_technicians: AssignedTechnician[];
 };

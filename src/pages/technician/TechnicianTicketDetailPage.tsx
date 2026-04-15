@@ -11,11 +11,6 @@ import { getApiErrorMessage } from "../../lib/api-error";
 import { logError } from "../../lib/logger";
 import type { TechnicianTicketDetail } from "../../types/technician-ticket";
 
-function formatDateTime(value: string | null) {
-  if (!value) return "-";
-  return new Date(value).toLocaleString("id-ID");
-}
-
 type Coordinates = {
   latitude: string;
   longitude: string;
@@ -677,7 +672,6 @@ export default function TechnicianTicketDetailPage() {
               />
               <div className="mt-3 space-y-1">
                 <p><span className="text-slate-500">Alamat:</span> {ticket.checkin.address}</p>
-                <p><span className="text-slate-500">Server Timestamp:</span> {formatDateTime(ticket.checkin.server_timestamp)}</p>
                 <p><span className="text-slate-500">Catatan:</span> {ticket.checkin.notes || "-"}</p>
               </div>
             </div>
@@ -773,7 +767,6 @@ export default function TechnicianTicketDetailPage() {
               />
               <div className="mt-3 space-y-1">
                 <p><span className="text-slate-500">Alamat:</span> {ticket.resolution.address}</p>
-                <p><span className="text-slate-500">Server Timestamp:</span> {formatDateTime(ticket.resolution.server_timestamp)}</p>
                 <p><span className="text-slate-500">Catatan:</span> {ticket.resolution.resolution_note}</p>
               </div>
             </div>

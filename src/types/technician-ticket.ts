@@ -7,6 +7,8 @@ export type TechnicianAssignedTicket = {
     phone_number: string;
     internal_status: string;
     public_status: string;
+    sla_deadline: string | null;
+    is_sla_breached: boolean;
     created_at: string;
     has_checkin: boolean;
     has_resolution: boolean;
@@ -48,6 +50,8 @@ export type TechnicianTicketDetail = {
     phone_number: string;
     internal_status: string;
     public_status: string;
+    sla_deadline: string | null;
+    is_sla_breached: boolean;
     created_at: string;
     checkin: TechnicianCheckIn | null;
     resolution: TechnicianResolution | null;

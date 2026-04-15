@@ -1,9 +1,12 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router";
+import AdminNotificationToasts from "../notifications/AdminNotificationToasts";
+import NotificationBell from "../notifications/NotificationBell";
 import { clearAuthSession, getUser, resolveUserRoleName } from "../../lib/auth";
 
 const navItems = [
   { label: "Dashboard", to: "/admin" },
   { label: "Ticket List", to: "/admin/tickets" },
+  { label: "Reports", to: "/admin/reports" },
 ];
 
 export default function AppShell() {
@@ -20,7 +23,7 @@ export default function AppShell() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#e0f2fe_0%,#f8fafc_38%,#eef2ff_100%)]">
-      <header className="border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
+      <header className="relative z-40 overflow-visible border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-[1320px] flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
             <h1 className="text-lg font-bold text-slate-950 sm:text-xl">Ticketing System CIM</h1>
@@ -29,14 +32,20 @@ export default function AppShell() {
             </p>
           </div>
 
-          <button
-            onClick={handleLogout}
-            className="inline-flex w-full items-center justify-center rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 sm:w-auto"
-          >
-            Logout
-          </button>
+          <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
+            <NotificationBell />
+
+            <button
+              onClick={handleLogout}
+              className="inline-flex flex-1 items-center justify-center rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 sm:flex-none"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </header>
+
+      <AdminNotificationToasts />
 
       <div className="mx-auto grid w-full max-w-[1320px] grid-cols-1 gap-4 px-4 py-4 sm:px-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-5 lg:py-5">
         <aside className="h-fit rounded-2xl border border-slate-200 bg-white/88 p-3 shadow-sm backdrop-blur-sm lg:sticky lg:top-4">

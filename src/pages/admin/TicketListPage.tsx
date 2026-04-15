@@ -1,12 +1,19 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router";
-import { getInternalTickets } from "../../api/internal-ticket.api";
+import { getTickets } from "../../api/ticket.api";
+import { getTechnicians } from "../../api/user.api";
 import { LoadingState } from "../../components/feedback/LoadingIndicator";
 import InternalStatusBadge from "../../components/status/InternalStatusBadge";
-import { internalStatusFilterOptions } from "../../components/status/internalStatus";
+import SlaBadge from "../../components/status/SlaBadge";
+import { addAdminTicketNotificationsListener } from "../../features/notifications/notification-events";
+import TicketFilterBar from "../../features/tickets/components/TicketFilterBar";
+import {
+  emptyTicketFilterBarValue,
+  type TicketFilterBarValue,
+} from "../../features/tickets/components/ticketFilterBar.shared";
 import { getApiErrorMessage } from "../../lib/api-error";
 import { logError } from "../../lib/logger";
-import type { TicketListItem } from "../../types/admin-ticket";
+import type { TechnicianOption, TicketListItem } from "../../types/admin-ticket";
 
 function formatDateTime(value: string) {
   return new Date(value).toLocaleString("id-ID", {
@@ -17,42 +24,82 @@ function formatDateTime(value: string) {
 
 export default function TicketListPage() {
   const [tickets, setTickets] = useState<TicketListItem[]>([]);
+  const [technicians, setTechnicians] = useState<TechnicianOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
 
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
+  const [filters, setFilters] = useState<TicketFilterBarValue>(emptyTicketFilterBarValue);
 
-  async function loadTickets(params?: { q?: string; status?: string }) {
+  const loadTickets = useCallback(async (
+    nextFilters: TicketFilterBarValue,
+    nextSearch: string,
+    options?: { background?: boolean }
+  ) => {
     try {
-      setLoading(true);
+      if (options?.background) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       setError("");
-      const data = await getInternalTickets(params);
+      const data = await getTickets({
+        ...nextFilters,
+        q: nextSearch,
+      });
       setTickets(data);
     } catch (err) {
       logError(err);
       setError(getApiErrorMessage(err, "Gagal memuat daftar ticket. Silakan coba lagi."));
     } finally {
-      setLoading(false);
+      if (options?.background) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
-  }
+  }, []);
 
   useEffect(() => {
-    void loadTickets();
+    async function initializePage() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const [ticketData, technicianData] = await Promise.all([
+          getTickets(emptyTicketFilterBarValue),
+          getTechnicians(),
+        ]);
+
+        setTickets(ticketData);
+        setTechnicians(technicianData);
+      } catch (err) {
+        logError(err);
+        setError(getApiErrorMessage(err, "Gagal memuat daftar ticket. Silakan coba lagi."));
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    void initializePage();
   }, []);
+
+  useEffect(() => {
+    return addAdminTicketNotificationsListener(() => {
+      void loadTickets(filters, search, { background: true });
+    });
+  }, [filters, search, loadTickets]);
 
   async function handleFilterSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    await loadTickets({
-      q: search || undefined,
-      status: status || undefined,
-    });
+    await loadTickets(filters, search);
   }
 
   async function handleReset() {
     setSearch("");
-    setStatus("");
-    await loadTickets();
+    setFilters(emptyTicketFilterBarValue);
+    await loadTickets(emptyTicketFilterBarValue, "");
   }
 
   return (
@@ -62,11 +109,12 @@ export default function TicketListPage() {
         <p className="text-sm text-slate-500">
           Daftar ticket masuk untuk dikelola oleh admin dan head.
         </p>
+        {refreshing ? <p className="mt-1 text-xs text-sky-700">Memperbarui ticket terbaru...</p> : null}
       </div>
 
       <form
         onSubmit={handleFilterSubmit}
-        className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 p-3 sm:p-4 lg:grid-cols-[minmax(0,1fr)_220px_auto_auto]"
+        className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 p-3 sm:p-4 lg:grid-cols-[minmax(0,1fr)_auto]"
       >
         <input
           className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
@@ -75,19 +123,6 @@ export default function TicketListPage() {
           placeholder="Cari kode ticket, pelapor, kategori, atau PIC"
         />
 
-        <select
-          className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-          value={status}
-          onChange={(event) => setStatus(event.target.value)}
-        >
-          <option value="">Semua Status</option>
-          {internalStatusFilterOptions.map((item) => (
-            <option key={item.value} value={item.value}>
-              {item.label}
-            </option>
-          ))}
-        </select>
-
         <button
           type="submit"
           disabled={loading}
@@ -95,17 +130,21 @@ export default function TicketListPage() {
             loading ? "blur-[0.6px] opacity-70" : ""
           }`}
         >
-          Filter
-        </button>
-
-        <button
-          type="button"
-          onClick={handleReset}
-          className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-        >
-          Reset
+          Cari Ticket
         </button>
       </form>
+
+      <TicketFilterBar
+        key={`${filters.status}|${filters.category}|${filters.dateFrom}|${filters.dateTo}|${filters.technicianId}`}
+        initialValue={filters}
+        technicians={technicians}
+        disabled={loading}
+        onApply={async (nextFilters) => {
+          setFilters(nextFilters);
+          await loadTickets(nextFilters, search);
+        }}
+        onReset={() => void handleReset()}
+      />
 
       {error ? (
         <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -130,7 +169,13 @@ export default function TicketListPage() {
                   </p>
                   <p className="text-sm text-slate-500">{ticket.full_name}</p>
                 </div>
-                <InternalStatusBadge status={ticket.internal_status} />
+                <div className="flex shrink-0 flex-col items-end gap-2">
+                  <InternalStatusBadge status={ticket.internal_status} />
+                  <SlaBadge
+                    slaDeadline={ticket.sla_deadline}
+                    isSlaBreached={ticket.is_sla_breached}
+                  />
+                </div>
               </div>
 
               <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
@@ -188,6 +233,7 @@ export default function TicketListPage() {
               <th className="px-4 py-3">Pelapor</th>
               <th className="px-4 py-3">Kategori</th>
               <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">SLA</th>
               <th className="px-4 py-3">Assigned</th>
               <th className="px-4 py-3">Dibuat</th>
               <th className="px-4 py-3">Aksi</th>
@@ -197,7 +243,7 @@ export default function TicketListPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} className="px-4 py-5">
+                <td colSpan={8} className="px-4 py-5">
                   <LoadingState
                     label="Memuat daftar ticket..."
                     className="border-dashed bg-transparent py-4"
@@ -206,7 +252,7 @@ export default function TicketListPage() {
               </tr>
             ) : tickets.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-sm text-slate-500">
+                <td colSpan={8} className="px-4 py-6 text-center text-sm text-slate-500">
                   Belum ada data ticket.
                 </td>
               </tr>
@@ -227,6 +273,13 @@ export default function TicketListPage() {
 
                   <td className="px-4 py-3">
                     <InternalStatusBadge status={ticket.internal_status} />
+                  </td>
+
+                  <td className="px-4 py-3">
+                    <SlaBadge
+                      slaDeadline={ticket.sla_deadline}
+                      isSlaBreached={ticket.is_sla_breached}
+                    />
                   </td>
 
                   <td className="px-4 py-3">

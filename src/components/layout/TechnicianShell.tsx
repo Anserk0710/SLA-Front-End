@@ -1,4 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router";
+import NotificationBell from "../notifications/NotificationBell";
 import { clearAuthSession, getUser } from "../../lib/auth";
 
 const navItems = [{ label: "My Assigned Tickets", to: "/technician" }];
@@ -15,7 +16,7 @@ export default function TechnicianShell() {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      <header className="border-b bg-white">
+      <header className="relative z-40 overflow-visible border-b bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div>
             <h1 className="text-xl font-bold">Ticketing Technician</h1>
@@ -24,12 +25,16 @@ export default function TechnicianShell() {
             </p>
           </div>
 
-          <button
-            onClick={handleLogout}
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white"
-          >
-            Logout
-          </button>
+          <div className="flex items-center gap-3">
+            <NotificationBell />
+
+            <button
+              onClick={handleLogout}
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </header>
 

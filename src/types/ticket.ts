@@ -1,3 +1,13 @@
+export interface Ticket {
+    id: string;
+    ticket_code: string;
+    category: string;
+    status: string;
+    created_at?: string;
+    sla_deadline?: string | null;
+    is_sla_breached: boolean;
+}
+
 export type CreatePublicTicketPayload = {
     full_name: string;
     full_address: string;
@@ -19,6 +29,8 @@ export type TrackingTicketResponse = {
     category: string;
     public_status: string;
     internal_status: string;
+    sla_deadline: string | null;
+    is_sla_breached: boolean;
     created_at: string;
     updated_at: string;
 };
